@@ -154,6 +154,21 @@ int knapsack(int W, Item arr[], int n)
 int main(int argc, char **argv)
 {
     MPI_Init(&argc, &argv);
+    /********************* Declare Node Struct *********************/
+    int nodeStructBlockLengths[4] = {1, 1, 1, 1};
+    MPI_Datatype nodeStructTypes[4] = {MPI_INT, MPI_INT, MPI_INT, MPI_FLOAT};
+    MPI_Datatype mpiNodeStructType;
+    MPI_Aint nodeStrucoffsets[4];
+
+    nodeStrucoffsets[0] = offsetof(Node, level);
+    nodeStrucoffsets[1] = offsetof(Node, profit);
+    nodeStrucoffsets[2] = offsetof(Node, bound);
+    nodeStrucoffsets[3] = offsetof(Node, weight);
+
+    MPI_Type_create_struct(4, nodeStructBlockLengths, nodeStrucoffsets,
+            nodeStructTypes, &mpiNodeStructType);
+    MPI_Type_commit(&mpiNodeStructType);
+    /***************************************************************/
 	int W = 10; // Weight of knapsack
 //	Item arr[] = {{2, 40}, {3.14, 50}, {1.98, 100},
 //				{5, 95}, {3, 30}};
@@ -201,6 +216,9 @@ int main(int argc, char **argv)
     
     free(items);
     
+    /*********************** Free Node Struct **********************/
+    MPI_Type_free(&mpiNodeStructType);
+    /***************************************************************/
     MPI_Finalize();
 	return 0;
 }
