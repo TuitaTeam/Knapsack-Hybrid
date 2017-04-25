@@ -168,6 +168,18 @@ int main(int argc, char **argv)
     MPI_Type_create_struct(4, nodeStructBlockLengths, nodeStrucoffsets,
             nodeStructTypes, &mpiNodeStructType);
     MPI_Type_commit(&mpiNodeStructType);
+    /********************* Declare Item Struct *********************/
+    int itemStructBlockLengths[2] = {1, 1};
+    MPI_Datatype itemStructTypes[2] = {MPI_FLOAT, MPI_INT};
+    MPI_Datatype mpiItemStructType;
+    MPI_Aint itemStrucoffsets[2];
+
+    itemStrucoffsets[0] = offsetof(Item, weight);
+    itemStrucoffsets[1] = offsetof(Item, value);
+
+    MPI_Type_create_struct(2, itemStructBlockLengths, itemStrucoffsets,
+            itemStructTypes, &mpiItemStructType);
+    MPI_Type_commit(&mpiItemStructType);
     /***************************************************************/
     double tpivot1=0,tpivot2=0,tpivot3=0; //time counting
     struct timeval tim;
@@ -208,6 +220,9 @@ int main(int argc, char **argv)
     
     /*********************** Free Node Struct **********************/
     MPI_Type_free(&mpiNodeStructType);
+    /***************************************************************/
+    /*********************** Free Item Struct **********************/
+    MPI_Type_free(&mpiItemStructType);
     /***************************************************************/
     MPI_Finalize();
 	return 0;
