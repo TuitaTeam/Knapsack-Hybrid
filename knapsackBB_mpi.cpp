@@ -7,6 +7,7 @@
 #include <vector>       // std::vector
 #include <queue>          // std::queue
 #include <sys/time.h>
+#include <mpi.h>
 
 using namespace std;
 
@@ -152,6 +153,7 @@ int knapsack(int W, Item arr[], int n)
 // driver program to test above function
 int main(int argc, char **argv)
 {
+    MPI_Init(&argc, &argv);
 	int W = 10; // Weight of knapsack
 //	Item arr[] = {{2, 40}, {3.14, 50}, {1.98, 100},
 //				{5, 95}, {3, 30}};
@@ -199,5 +201,6 @@ int main(int argc, char **argv)
     
     free(items);
     
+    MPI_Finalize();
 	return 0;
 }
