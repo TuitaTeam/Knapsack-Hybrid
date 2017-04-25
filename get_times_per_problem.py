@@ -1,0 +1,42 @@
+#!/usr/bin/python
+
+import sys
+
+if len(sys.argv) != 3:
+    print "Usage:", sys.argv[0], "<results_file.csv> <threads.csv>"
+    exit(1)
+
+f = open(sys.argv[1], 'r')
+
+results = {}
+
+tf = open(sys.argv[2], 'r')
+threads = tf.read().split()
+tf.close()
+
+for line in f:
+   l = line.split()
+   if len(l) == 6:
+       results[(l[0], l[1], l[5])] = l[4]
+
+f.close()
+f = open(sys.argv[1], 'r')
+
+sys.stdout.write("Width Items Time1Thread")
+for thread in threads:
+    sys.stdout.write(' Time' + str(thread) + 'Threads')
+sys.stdout.write('\n')
+for line in f:
+   line = line.strip('\n')
+   l = line.split()
+   try:
+       if len(l) == 6:
+           if l[5] == '1':
+               sys.stdout.write(str(l[0]) + ' ' + str(l[1]) + ' ' + str(l[4]))
+               for thread in threads:
+                   sys.stdout.write(' ' + str(results[(l[0], l[1], thread)]))
+               sys.stdout.write('\n')
+   except:
+       pass
+
+f.close()

@@ -31,3 +31,19 @@
 # Debug files
 *.dSYM/
 *.su
+
+# Binaries
+knapsackBB_serial
+knapsackBB_mpi
+knapsackDYN_serial
+knapsackDYN_mpi
+
+# Vim tmp file
+*.swp
+
+# Test files
+testbed/
+
+*.csv
+*.txt
+*.svg
