@@ -169,15 +169,10 @@ int main(int argc, char **argv)
             nodeStructTypes, &mpiNodeStructType);
     MPI_Type_commit(&mpiNodeStructType);
     /***************************************************************/
-	int W = 10; // Weight of knapsack
-//	Item arr[] = {{2, 40}, {3.14, 50}, {1.98, 100},
-//				{5, 95}, {3, 30}};
-//	int n = sizeof(arr) / sizeof(arr[0]);
     double tpivot1=0,tpivot2=0,tpivot3=0; //time counting
     struct timeval tim;
     
     Item temp,*items;
-    int *p, *w;   // width and cost values
     int cont;
     long int Nitems; // Number of items
     long int Width;  // Max. load to carry
@@ -201,11 +196,6 @@ int main(int argc, char **argv)
         fscanf(test_file,"%d,%f\n",&temp.value,&temp.weight);
         items[cont]=temp;
     }
-    
-//    for (cont=0;cont<Nitems;cont++){
-//        cout << "Value: " << cont << ":" << items[cont].value << ":" << items[cont].weight << endl;
-//    }
-//	cout << "Maximum possible profit = " << knapsack(Width, items, Nitems) << endl;
 
     gettimeofday(&tim, NULL);
     tpivot2 = (tim.tv_sec+(tim.tv_usec/1000000.0));
