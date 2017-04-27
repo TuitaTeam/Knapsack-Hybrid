@@ -47,3 +47,7 @@ testbed/
 *.csv
 *.txt
 *.svg
+
+# Results
+output/
+errors/
