@@ -346,25 +346,25 @@ int main(int argc, char **argv)
     /********************* Declare Node Struct *********************/
     int nodeStructBlockLengths[4] = {1, 1, 1, 1};
     MPI_Datatype nodeStructTypes[4] = {MPI_INT, MPI_INT, MPI_INT, MPI_FLOAT};
-    MPI_Aint nodeStrucoffsets[4];
+    MPI_Aint nodeStructOffsets[4];
 
-    nodeStrucoffsets[0] = offsetof(Node, level);
-    nodeStrucoffsets[1] = offsetof(Node, profit);
-    nodeStrucoffsets[2] = offsetof(Node, bound);
-    nodeStrucoffsets[3] = offsetof(Node, weight);
+    nodeStructOffsets[0] = offsetof(Node, level);
+    nodeStructOffsets[1] = offsetof(Node, profit);
+    nodeStructOffsets[2] = offsetof(Node, bound);
+    nodeStructOffsets[3] = offsetof(Node, weight);
 
-    MPI_Type_create_struct(4, nodeStructBlockLengths, nodeStrucoffsets,
+    MPI_Type_create_struct(4, nodeStructBlockLengths, nodeStructOffsets,
             nodeStructTypes, &mpiNodeStructType);
     MPI_Type_commit(&mpiNodeStructType);
     /********************* Declare Item Struct *********************/
     int itemStructBlockLengths[2] = {1, 1};
     MPI_Datatype itemStructTypes[2] = {MPI_FLOAT, MPI_INT};
-    MPI_Aint itemStrucoffsets[2];
+    MPI_Aint itemStructOffsets[2];
 
-    itemStrucoffsets[0] = offsetof(Item, weight);
-    itemStrucoffsets[1] = offsetof(Item, value);
+    itemStructOffsets[0] = offsetof(Item, weight);
+    itemStructOffsets[1] = offsetof(Item, value);
 
-    MPI_Type_create_struct(2, itemStructBlockLengths, itemStrucoffsets,
+    MPI_Type_create_struct(2, itemStructBlockLengths, itemStructOffsets,
             itemStructTypes, &mpiItemStructType);
     MPI_Type_commit(&mpiItemStructType);
     /***************************************************************/
