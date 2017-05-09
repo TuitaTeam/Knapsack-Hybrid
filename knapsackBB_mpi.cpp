@@ -226,7 +226,6 @@ void master(char *filename) {
             case NEW_MAX_PROFIT:
                 if (u.profit > maxProfit) {
                     maxProfit = u.profit;
-                    cout << "NEW_MAX_PROFIT: " << maxProfit << endl;
                 }
                 break;
             case NODE:
