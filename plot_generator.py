@@ -24,8 +24,6 @@ def plot(filename):
     global threads
     pl.figure(figsize=(15,10), dpi=80, facecolor='white', edgecolor='k')
     for key, value in times.items():
-        print value
-        print threads
         pl.plot(threads, value, linewidth=2, label='Width: ' + key[0] + ' Items: ' + key[1])
     pl.legend()
     pl.xlabel('Number of cores')
