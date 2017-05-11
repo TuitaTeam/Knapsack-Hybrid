@@ -3,7 +3,9 @@ MPI_TARGET_BB=knapsackBB_mpi
 RESULTS=results.csv
 RESULTS_SPEEDUPS=results_speedups.csv
 RESULTS_TIMES=results_times_per_problem.csv
+RESULTS_SPEEDUPS_PER_PROBLEM=results_speedups_per_problem.csv
 PLOT_FILENAME=results_times_per_problem.svg
+PLOT_SPEEDUPS_FILENAME=results_speedups_per_problem.svg
 OUTPUT_FOLER=output
 ERROR_FOLDER=errors
 THREADS_FILE=threads.csv
@@ -28,7 +30,7 @@ run-local : bb
 run-moore : bb
 	./run_all.sh
 
-results : $(RESULTS) $(RESULTS_TIMES) $(RESULTS_SPEEDUPS)
+results : $(RESULTS) $(RESULTS_TIMES) $(RESULTS_SPEEDUPS) $(RESULTS_SPEEDUPS_PER_PROBLEM)
 
 $(RESULTS) : $(OUTPUT_FOLER)/*
 	./get_results.sh > $(RESULTS)
@@ -42,11 +44,20 @@ $(RESULTS_SPEEDUPS) : $(RESULTS)
 $(PLOT_FILENAME) : $(RESULTS_TIMES) $(THREADS_FILE)
 	./plot_generator.py $(RESULTS_TIMES) $(THREADS_FILE) $(PLOT_FILENAME)
 
-plot : $(PLOT_FILENAME)
+$(PLOT_SPEEDUPS_FILENAME) : $(RESULTS_SPEEDUPS_PER_PROBLEM) $(THREADS_FILE)
+	./plot_speedups_generator.py $(RESULTS_SPEEDUPS_PER_PROBLEM) \
+		$(THREADS_FILE) $(PLOT_SPEEDUPS_FILENAME)
+
+$(RESULTS_SPEEDUPS_PER_PROBLEM) : $(RESULTS_SPEEDUPS) $(THREADS_FILE)
+	./get_speedups_per_problem.py $(RESULTS_SPEEDUPS) $(THREADS_FILE) \
+		> $(RESULTS_SPEEDUPS_PER_PROBLEM)
+
+plot : $(PLOT_FILENAME) $(PLOT_SPEEDUPS_FILENAME)
 
 clean : clean-outputs clean-errors
 	rm -rf $(SERIAL_TARGET_BB) $(MPI_TARGET_BB) $(RESULTS) $(PLOT_FILENAME) \
-		$(RESULTS_SPEEDUPS) $(RESULTS_TIMES) $(THREADS_FILE)
+		$(RESULTS_SPEEDUPS) $(RESULTS_TIMES) $(THREADS_FILE) \
+		$(PLOT_SPEEDUPS_FILENAME) $(PLOT_SPEEDUPS_FILENAME)
 
 clean-outputs :
 	rm -rf $(OUTPUT_FOLER)
