@@ -23,7 +23,9 @@ typedef enum TAG {
     WORK_REQ,
     NODE,
     NEW_MAX_PROFIT,
-    END
+    END,
+    CONTINUE,
+    HELLO
 } TAG;
 
 // Node structure to store information of decision
@@ -237,6 +239,14 @@ void master(char *filename) {
                     MPI_Send(&u, 1, mpiNodeStructType, worker, NODE, MPI_COMM_WORLD);
                 }
                 break;
+            case HELLO:
+                if (!workersWaitingWork.empty()) {
+                    MPI_Send(&u, 1, mpiNodeStructType, status.MPI_SOURCE,
+                            WORK_REQ, MPI_COMM_WORLD);
+                } else {
+                    MPI_Send(&u, 1, mpiNodeStructType, status.MPI_SOURCE,
+                            CONTINUE, MPI_COMM_WORLD);
+                }
         }
         while (!workersWaitingWork.empty() && !Q.empty()) {
             u = Q.front();
@@ -280,14 +290,29 @@ void worker() {
 	// compute profit of all children of extracted item
 	// and keep saving maxProfit
 	int maxProfit = 0;
+        int i = 0;
 	while (true)
 	{
 		// Dequeue a node
-		MPI_Send(&u, 1, mpiNodeStructType, 0, WORK_REQ, MPI_COMM_WORLD);
-		MPI_Recv(&u, 1, mpiNodeStructType, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+		if (Q.empty()) {
+			MPI_Send(&u, 1, mpiNodeStructType, 0, WORK_REQ, MPI_COMM_WORLD);
+			MPI_Recv(&u, 1, mpiNodeStructType, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+			if (status.MPI_TAG == NODE) {
+				Q.push(u);
+			}
+		} else if (i > 1000) {
+			i = 0;
+			MPI_Send(&u, 1, mpiNodeStructType, 0, HELLO, MPI_COMM_WORLD);
+			MPI_Recv(&u, 1, mpiNodeStructType, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+			if (status.MPI_TAG == WORK_REQ) {
+				u = Q.front();
+		                Q.pop();
+				MPI_Send(&u, 1, mpiNodeStructType, 0, NODE, MPI_COMM_WORLD);
+			}
+		}
 		if (status.MPI_TAG == END) break;
-		//u = Q.front();
-		//Q.pop();
+		u = Q.front();
+		Q.pop();
 
 		// If it is starting node, assign level 0
 		if (u.level == -1)
@@ -323,8 +348,8 @@ void worker() {
 		// then only push into queue for further
 		// consideration
 		if (v.bound > maxProfit) {
-			//Q.push(v);
-			MPI_Send(&v, 1, mpiNodeStructType, 0, NODE, MPI_COMM_WORLD);
+			Q.push(v);
+			//MPI_Send(&v, 1, mpiNodeStructType, 0, NODE, MPI_COMM_WORLD);
 		}
 
 		// Do the same thing, but Without taking
@@ -333,9 +358,10 @@ void worker() {
 		v.profit = u.profit;
 		v.bound = bound(v, n, W, arr);
 		if (v.bound > maxProfit) {
-			//Q.push(v);
-			MPI_Send(&v, 1, mpiNodeStructType, 0, NODE, MPI_COMM_WORLD);
+			Q.push(v);
+			//MPI_Send(&v, 1, mpiNodeStructType, 0, NODE, MPI_COMM_WORLD);
 		}
+		i += 1;
 	}
 }
 
