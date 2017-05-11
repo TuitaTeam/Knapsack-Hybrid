@@ -308,6 +308,7 @@ void worker() {
 				u = Q.front();
 		                Q.pop();
 				MPI_Send(&u, 1, mpiNodeStructType, 0, NODE, MPI_COMM_WORLD);
+				continue;
 			}
 		}
 		if (status.MPI_TAG == END) break;
