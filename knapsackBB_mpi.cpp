@@ -212,7 +212,7 @@ void master(char *filename) {
     // compute profit of all children of extracted item
     // and keep saving maxProfit
     int maxProfit = 0;
-    while (!Q.empty() && Q.size() < nWorkers) {
+    while (!Q.empty() && Q.size() < nWorkers + 1) {
         // Dequeue a node
         u = Q.front();
         Q.pop();
@@ -270,6 +270,53 @@ void master(char *filename) {
             MPI_Send(&u, 1, mpiNodeStructType, i,
                     END, MPI_COMM_WORLD);
         }
+    }
+    while (!Q.empty()) {
+        // Dequeue a node
+        u = Q.front();
+        Q.pop();
+
+        // If it is starting node, assign level 0
+        if (u.level == -1)
+            v.level = 0;
+
+        // If there is nothing on next level
+        if (u.level == Nitems - 1)
+            continue;
+
+        // Else if not last node, then increment level,
+        // and compute profit of children nodes.
+        v.level = u.level + 1;
+
+        // Taking current level's item add current
+        // level's weight and value to node u's
+        // weight and value
+        v.weight = u.weight + items[v.level].weight;
+        v.profit = u.profit + items[v.level].value;
+
+        // If cumulated weight is less than W and
+        // profit is greater than previous profit,
+        // update maxprofit
+        if (v.weight <= Width && v.profit > maxProfit)
+            maxProfit = v.profit;
+
+        // Get the upper bound on profit to decide
+        // whether to add v to Q or not.
+        v.bound = bound(v, Nitems, Width, items);
+
+        // If bound value is greater than profit,
+        // then only push into queue for further
+        // consideration
+        if (v.bound > maxProfit)
+            Q.push(v);
+
+        // Do the same thing, but Without taking
+        // the item in knapsack
+        v.weight = u.weight;
+        v.profit = u.profit;
+        v.bound = bound(v, Nitems, Width, items);
+        if (v.bound > maxProfit)
+            Q.push(v);
     }
     MPI_Status status;
     for (int i = 1; i < nWorkers + 1; i += 1) {
