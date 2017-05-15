@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Copyright 2017 Meritxell Jordana Gavieiro
+# Copyright 2017 Albert Merino Pulido
+# Copyright 2017 Marc Sánchez Fauste
+
 THREADS="2 4 8 16 32"
 PROBLEMS=$(find testbed -name "*" -type f)
 SERIAL="./knapsackBB_serial"

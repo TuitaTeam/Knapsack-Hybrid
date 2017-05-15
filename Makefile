@@ -1,3 +1,7 @@
+# Copyright 2017 Meritxell Jordana Gavieiro
+# Copyright 2017 Albert Merino Pulido
+# Copyright 2017 Marc Sánchez Fauste
+
 SERIAL_TARGET_BB=knapsackBB_serial
 MPI_TARGET_BB=knapsackBB_mpi
 RESULTS=results.csv

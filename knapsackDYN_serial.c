@@ -1,4 +1,10 @@
 // A Dynamic Programming based solution for 0-1 Knapsack problem
+
+/* Copyright 2017 Meritxell Jordana Gavieiro
+ * Copyright 2017 Albert Merino Pulido
+ * Copyright 2017 Marc Sánchez Fauste
+**/
+
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>

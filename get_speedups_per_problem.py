@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+# Copyright 2017 Meritxell Jordana Gavieiro
+# Copyright 2017 Albert Merino Pulido
+# Copyright 2017 Marc Sanchez Fauste
+
 import sys
 
 if len(sys.argv) != 3:

@@ -2,6 +2,11 @@
 // branch and bound
 //#include "stdc++.h"
 
+/* Copyright 2017 Meritxell Jordana Gavieiro
+ * Copyright 2017 Albert Merino Pulido
+ * Copyright 2017 Marc Sánchez Fauste
+**/
+
 #include <iostream>     // std::cout
 #include <algorithm>    // std::sort
 #include <vector>       // std::vector
