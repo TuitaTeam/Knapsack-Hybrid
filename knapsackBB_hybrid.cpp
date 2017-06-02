@@ -1,6 +1,5 @@
 // C++ program to solve knapsack problem using
 // branch and bound
-//#include "stdc++.h"
 
 /* Copyright 2017 Meritxell Jordana Gavieiro
  * Copyright 2017 Albert Merino Pulido
@@ -49,6 +48,12 @@ struct Node {
     float weight;
 };
 
+typedef struct Work {
+    queue<Node> q;
+    int maxProfit;
+    Work(queue<Node> q, int maxProfit) : q(q), maxProfit(maxProfit) {};
+} Work;
+
 MPI_Datatype mpiNodeStructType;
 MPI_Datatype mpiItemStructType;
 
@@ -96,34 +101,43 @@ int bound(Node u, int n, int W, Item arr[]) {
     return profit_bound;
 }
 
-// Returns maximum profit we can get with capacity W
-
-int knapsack(int W, Item arr[], int n) {
-    // sorting Item on basis of value per unit
-    // weight.
-    //sort(arr, arr + n, cmp);
-
-    // make a queue for traversing the node
+Work getWork(int W, Item arr[], int n, Node rootNode, int currentMaxProfit,
+        unsigned int numberOfNodes) {
     queue<Node> Q;
     Node u, v;
+    Q.push(rootNode);
+    int maxProfit = currentMaxProfit;
+    while (!Q.empty() && Q.size() < numberOfNodes) {
+        u = Q.front();
+        Q.pop();
+        if (u.level == n - 1) continue;
+        v.level = u.level + 1;
+        v.weight = u.weight + arr[v.level].weight;
+        v.profit = u.profit + arr[v.level].value;
+        if (v.weight <= W && v.profit > maxProfit) maxProfit = v.profit;
+        v.bound = bound(v, n, W, arr);
+        if (v.bound > maxProfit) Q.push(v);
+        v.weight = u.weight;
+        v.profit = u.profit;
+        v.bound = bound(v, n, W, arr);
+        if (v.bound > maxProfit) Q.push(v);
+    }
+    return Work(Q, maxProfit);
+}
 
-    // dummy node at starting
-    u.level = -1;
-    u.profit = u.weight = 0;
-    Q.push(u);
+// Returns maximum profit we can get with capacity W
+
+int knapsack(int W, Item arr[], int n, int currentMaxProfit, queue<Node> Q) {
+    Node u, v;
 
     // One by one extract an item from decision tree
     // compute profit of all children of extracted item
     // and keep saving maxProfit
-    int maxProfit = 0;
+    int maxProfit = currentMaxProfit;
     while (!Q.empty()) {
         // Dequeue a node
         u = Q.front();
         Q.pop();
-
-        // If it is starting node, assign level 0
-        if (u.level == -1)
-            v.level = 0;
 
         // If there is nothing on next level
         if (u.level == n - 1)
@@ -163,7 +177,6 @@ int knapsack(int W, Item arr[], int n) {
         if (v.bound > maxProfit)
             Q.push(v);
     }
-
     return maxProfit;
 }
 
@@ -207,65 +220,16 @@ void master(char *filename) {
     int nWorkers;
     MPI_Comm_size(MPI_COMM_WORLD, &nWorkers);
     nWorkers -= 1;
-    queue<Node> Q;
-    Node u, v;
+    Node u;
 
     // dummy node at starting
-    u.level = -1;
-    u.profit = u.weight = 0;
-    Q.push(u);
+    Node node;
+    node.level = -1;
+    node.profit = node.weight = 0;
+    Work work = getWork(Width, items, Nitems, node, 0, nWorkers + 1);
 
-    // One by one extract an item from decision tree
-    // compute profit of all children of extracted item
-    // and keep saving maxProfit
-    int maxProfit = 0;
-    while (!Q.empty() && Q.size() < nWorkers + 1) {
-        // Dequeue a node
-        u = Q.front();
-        Q.pop();
-
-        // If it is starting node, assign level 0
-        if (u.level == -1)
-            v.level = 0;
-
-        // If there is nothing on next level
-        if (u.level == Nitems - 1)
-            continue;
-
-        // Else if not last node, then increment level,
-        // and compute profit of children nodes.
-        v.level = u.level + 1;
-
-        // Taking current level's item add current
-        // level's weight and value to node u's
-        // weight and value
-        v.weight = u.weight + items[v.level].weight;
-        v.profit = u.profit + items[v.level].value;
-
-        // If cumulated weight is less than W and
-        // profit is greater than previous profit,
-        // update maxprofit
-        if (v.weight <= Width && v.profit > maxProfit)
-            maxProfit = v.profit;
-
-        // Get the upper bound on profit to decide
-        // whether to add v to Q or not.
-        v.bound = bound(v, Nitems, Width, items);
-
-        // If bound value is greater than profit,
-        // then only push into queue for further
-        // consideration
-        if (v.bound > maxProfit)
-            Q.push(v);
-
-        // Do the same thing, but Without taking
-        // the item in knapsack
-        v.weight = u.weight;
-        v.profit = u.profit;
-        v.bound = bound(v, Nitems, Width, items);
-        if (v.bound > maxProfit)
-            Q.push(v);
-    }
+    int maxProfit = work.maxProfit;
+    queue<Node> Q = work.q;
     MPI_Bcast(&maxProfit, 1, MPI_INT, 0, MPI_COMM_WORLD);
     for (int i = 1; i < nWorkers + 1; i += 1) {
         if (!Q.empty()) {
@@ -278,53 +242,7 @@ void master(char *filename) {
                     END, MPI_COMM_WORLD);
         }
     }
-    while (!Q.empty()) {
-        // Dequeue a node
-        u = Q.front();
-        Q.pop();
-
-        // If it is starting node, assign level 0
-        if (u.level == -1)
-            v.level = 0;
-
-        // If there is nothing on next level
-        if (u.level == Nitems - 1)
-            continue;
-
-        // Else if not last node, then increment level,
-        // and compute profit of children nodes.
-        v.level = u.level + 1;
-
-        // Taking current level's item add current
-        // level's weight and value to node u's
-        // weight and value
-        v.weight = u.weight + items[v.level].weight;
-        v.profit = u.profit + items[v.level].value;
-
-        // If cumulated weight is less than W and
-        // profit is greater than previous profit,
-        // update maxprofit
-        if (v.weight <= Width && v.profit > maxProfit)
-            maxProfit = v.profit;
-
-        // Get the upper bound on profit to decide
-        // whether to add v to Q or not.
-        v.bound = bound(v, Nitems, Width, items);
-
-        // If bound value is greater than profit,
-        // then only push into queue for further
-        // consideration
-        if (v.bound > maxProfit)
-            Q.push(v);
-
-        // Do the same thing, but Without taking
-        // the item in knapsack
-        v.weight = u.weight;
-        v.profit = u.profit;
-        v.bound = bound(v, Nitems, Width, items);
-        if (v.bound > maxProfit)
-            Q.push(v);
-    }
+    maxProfit =  knapsack(Width, items, Nitems, maxProfit, Q);
     MPI_Status status;
     for (int i = 1; i < nWorkers + 1; i += 1) {
         MPI_Recv(&u, 1, mpiNodeStructType, MPI_ANY_SOURCE, MPI_ANY_TAG,
@@ -334,7 +252,6 @@ void master(char *filename) {
         }
     }
     /********************************************************************/
-    //cout << Width << ":" << Nitems << ":" << knapsack(Width, items, Nitems);
     cout << Width << ":" << Nitems << ":" << maxProfit;
     gettimeofday(&tim, NULL);
     tpivot3 = (tim.tv_sec + (tim.tv_usec / 1000000.0));
@@ -353,67 +270,15 @@ void worker() {
     queue<Node> Q;
     Node u, v;
 
-    // dummy node at starting
     MPI_Status status;
-    //MPI_Recv(&u, 1, mpiNodeStructType, 0, NODE, MPI_COMM_WORLD, &status);
-    //Q.push(u);
 
-    // One by one extract an item from decision tree
-    // compute profit of all children of extracted item
-    // and keep saving maxProfit
     int maxProfit = 0;
     MPI_Bcast(&maxProfit, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Recv(&u, 1, mpiNodeStructType, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
     if (status.MPI_TAG == NODE) {
         Q.push(u);
     }
-    while (!Q.empty()) {
-        // Dequeue a node
-        u = Q.front();
-        Q.pop();
-
-        // If it is starting node, assign level 0
-        if (u.level == -1)
-            v.level = 0;
-
-        // If there is nothing on next level
-        if (u.level == n - 1)
-            continue;
-
-        // Else if not last node, then increment level,
-        // and compute profit of children nodes.
-        v.level = u.level + 1;
-
-        // Taking current level's item add current
-        // level's weight and value to node u's
-        // weight and value
-        v.weight = u.weight + arr[v.level].weight;
-        v.profit = u.profit + arr[v.level].value;
-
-        // If cumulated weight is less than W and
-        // profit is greater than previous profit,
-        // update maxprofit
-        if (v.weight <= W && v.profit > maxProfit)
-            maxProfit = v.profit;
-
-        // Get the upper bound on profit to decide
-        // whether to add v to Q or not.
-        v.bound = bound(v, n, W, arr);
-
-        // If bound value is greater than profit,
-        // then only push into queue for further
-        // consideration
-        if (v.bound > maxProfit)
-            Q.push(v);
-
-        // Do the same thing, but Without taking
-        // the item in knapsack
-        v.weight = u.weight;
-        v.profit = u.profit;
-        v.bound = bound(v, n, W, arr);
-        if (v.bound > maxProfit)
-            Q.push(v);
-    }
+    v.profit = knapsack(W, arr, n, maxProfit, Q);
     MPI_Send(&v, 1, mpiNodeStructType, 0, NEW_MAX_PROFIT, MPI_COMM_WORLD);
 }
 

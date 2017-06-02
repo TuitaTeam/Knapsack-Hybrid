@@ -26,7 +26,7 @@ $(SERIAL_TARGET_BB) : knapsackBB_serial.cpp
 hybrid : $(HYBRID_TARGET_BB)
 
 $(HYBRID_TARGET_BB) : knapsackBB_hybrid.cpp
-	mpic++ -fopenmp knapsackBB_hybrid.cpp -o $(HYBRID_TARGET_BB)
+	mpic++ -fopenmp knapsackBB_hybrid.cpp -o $(HYBRID_TARGET_BB) -Wall
 
 run-local : bb
 	./run_all_local.sh
