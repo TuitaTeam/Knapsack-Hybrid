@@ -133,7 +133,7 @@ int knapsack(int W, Item arr[], int n, int currentMaxProfit, queue<Node> Q) {
     // and keep saving maxProfit
     int maxProfit = currentMaxProfit;
 
-    #pragma omp parallel reduction(max:maxProfit)
+    #pragma omp parallel
     {
         Node u, v1, v2;
         v1.bound = -1;
@@ -173,7 +173,12 @@ int knapsack(int W, Item arr[], int n, int currentMaxProfit, queue<Node> Q) {
             // If cumulated weight is less than W and
             // profit is greater than previous profit,
             // update maxprofit
-            if (v2.weight <= W && v2.profit > maxProfit) maxProfit = v2.profit;
+            if (v2.weight <= W && v2.profit > maxProfit) {
+                #pragma omp critical
+                {
+                    maxProfit = v2.profit;
+                }
+            }
 
             // If bound value is greater than profit,
             // then only push into queue for further
