@@ -128,54 +128,62 @@ Work getWork(int W, Item arr[], int n, Node rootNode, int currentMaxProfit,
 // Returns maximum profit we can get with capacity W
 
 int knapsack(int W, Item arr[], int n, int currentMaxProfit, queue<Node> Q) {
-    Node u, v;
-
     // One by one extract an item from decision tree
     // compute profit of all children of extracted item
     // and keep saving maxProfit
     int maxProfit = currentMaxProfit;
-    while (!Q.empty()) {
-        // Dequeue a node
-        u = Q.front();
-        Q.pop();
 
-        // If there is nothing on next level
-        if (u.level == n - 1)
-            continue;
+    #pragma omp parallel reduction(max:maxProfit)
+    {
+        Node u, v1, v2;
+        v1.bound = -1;
+        v2.bound = -1;
+        bool queueIsEmpty;
+        while (true)
+        {
+            #pragma omp critical
+            {
+                if (!(queueIsEmpty = Q.empty())) {
+                    // Dequeue a node
+                    u = Q.front();
+                    Q.pop();
+                }
+            }
+            if (queueIsEmpty) break;
 
-        // Else if not last node, then increment level,
-        // and compute profit of children nodes.
-        v.level = u.level + 1;
+            // If there is nothing on next level
+            if (u.level == n-1) continue;
 
-        // Taking current level's item add current
-        // level's weight and value to node u's
-        // weight and value
-        v.weight = u.weight + arr[v.level].weight;
-        v.profit = u.profit + arr[v.level].value;
+            // Else if not last node, then increment level,
+            // and compute profit of children nodes.
+            v1.level = u.level + 1;
+            v2.level = u.level + 1;
 
-        // If cumulated weight is less than W and
-        // profit is greater than previous profit,
-        // update maxprofit
-        if (v.weight <= W && v.profit > maxProfit)
-            maxProfit = v.profit;
+            v1.weight = u.weight;
+            v1.profit = u.profit;
+            v1.bound = bound(v1, n, W, arr);
 
-        // Get the upper bound on profit to decide
-        // whether to add v to Q or not.
-        v.bound = bound(v, n, W, arr);
+            // Taking current level's item add current
+            // level's weight and value to node u's
+            // weight and value
+            v2.weight = u.weight + arr[v2.level].weight;
+            v2.profit = u.profit + arr[v2.level].value;
+            v2.bound = bound(v2, n, W, arr);
 
-        // If bound value is greater than profit,
-        // then only push into queue for further
-        // consideration
-        if (v.bound > maxProfit)
-            Q.push(v);
+            // If cumulated weight is less than W and
+            // profit is greater than previous profit,
+            // update maxprofit
+            if (v2.weight <= W && v2.profit > maxProfit) maxProfit = v2.profit;
 
-        // Do the same thing, but Without taking
-        // the item in knapsack
-        v.weight = u.weight;
-        v.profit = u.profit;
-        v.bound = bound(v, n, W, arr);
-        if (v.bound > maxProfit)
-            Q.push(v);
+            // If bound value is greater than profit,
+            // then only push into queue for further
+            // consideration
+            #pragma omp critical
+            {
+                if (v1.bound > maxProfit) Q.push(v1);
+                if (v2.bound > maxProfit) Q.push(v2);
+            }
+        }
     }
     return maxProfit;
 }
