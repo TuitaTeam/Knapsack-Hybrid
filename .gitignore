@@ -37,6 +37,7 @@ knapsackBB_serial
 knapsackBB_mpi
 knapsackDYN_serial
 knapsackDYN_mpi
+knapsackBB_hybrid
 
 # Vim tmp file
 *.swp
