@@ -3,7 +3,7 @@
 # Copyright 2017 Marc Sánchez Fauste
 
 SERIAL_TARGET_BB=knapsackBB_serial
-MPI_TARGET_BB=knapsackBB_mpi
+HYBRID_TARGET_BB=knapsackBB_hybrid
 RESULTS=results.csv
 RESULTS_SPEEDUPS=results_speedups.csv
 RESULTS_TIMES=results_times_per_problem.csv
@@ -14,19 +14,19 @@ OUTPUT_FOLER=output
 ERROR_FOLDER=errors
 THREADS_FILE=threads.csv
 
-all : serial mpi
+all : serial hybrid
 
-bb : $(SERIAL_TARGET_BB) $(MPI_TARGET_BB)
+bb : $(SERIAL_TARGET_BB) $(HYBRID_TARGET_BB)
 
 serial : $(SERIAL_TARGET_BB)
 
 $(SERIAL_TARGET_BB) : knapsackBB_serial.cpp
 	g++ knapsackBB_serial.cpp -o $(SERIAL_TARGET_BB)
 
-mpi : $(MPI_TARGET_BB)
+hybrid : $(HYBRID_TARGET_BB)
 
-$(MPI_TARGET_BB) : knapsackBB_mpi.cpp
-	mpic++ knapsackBB_mpi.cpp -o $(MPI_TARGET_BB)
+$(HYBRID_TARGET_BB) : knapsackBB_hybrid.cpp
+	mpic++ -fopenmp knapsackBB_hybrid.cpp -o $(HYBRID_TARGET_BB)
 
 run-local : bb
 	./run_all_local.sh
@@ -59,7 +59,7 @@ $(RESULTS_SPEEDUPS_PER_PROBLEM) : $(RESULTS_SPEEDUPS) $(THREADS_FILE)
 plot : $(PLOT_FILENAME) $(PLOT_SPEEDUPS_FILENAME)
 
 clean : clean-outputs clean-errors
-	rm -rf $(SERIAL_TARGET_BB) $(MPI_TARGET_BB) $(RESULTS) $(PLOT_FILENAME) \
+	rm -rf $(SERIAL_TARGET_BB) $(HYBRID_TARGET_BB) $(RESULTS) $(PLOT_FILENAME) \
 		$(RESULTS_SPEEDUPS) $(RESULTS_TIMES) $(THREADS_FILE) \
 		$(PLOT_SPEEDUPS_FILENAME) $(PLOT_SPEEDUPS_FILENAME)
 

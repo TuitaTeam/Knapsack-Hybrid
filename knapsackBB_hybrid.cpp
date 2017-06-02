@@ -13,6 +13,7 @@
 #include <queue>          // std::queue
 #include <sys/time.h>
 #include <mpi.h>
+#include <omp.h>
 
 using namespace std;
 
