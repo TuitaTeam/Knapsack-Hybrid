@@ -127,64 +127,67 @@ Work getWork(int W, Item arr[], int n, Node rootNode, int currentMaxProfit,
 
 // Returns maximum profit we can get with capacity W
 
-int knapsack(int W, Item arr[], int n, int currentMaxProfit, queue<Node> Q) {
-    // One by one extract an item from decision tree
-    // compute profit of all children of extracted item
-    // and keep saving maxProfit
-    int maxProfit = currentMaxProfit;
+int knapsack(int W, Item arr[], int n, int currentMaxProfit, Node rootNode) {
+    Work work = getWork(W, arr, n, rootNode, currentMaxProfit, omp_get_num_procs() * 4);
+
+    int maxProfit = work.maxProfit;
+    queue<Node> globalQ = work.q;
 
     #pragma omp parallel
     {
         Node u, v1, v2;
-        v1.bound = -1;
-        v2.bound = -1;
         bool queueIsEmpty;
+        queue<Node> Q;
         while (true)
         {
             #pragma omp critical
             {
-                if (!(queueIsEmpty = Q.empty())) {
+                if (!(queueIsEmpty = globalQ.empty())) {
                     // Dequeue a node
-                    u = Q.front();
-                    Q.pop();
+                    u = globalQ.front();
+                    globalQ.pop();
+                    Q.push(u);
                 }
             }
             if (queueIsEmpty) break;
 
-            // If there is nothing on next level
-            if (u.level == n-1) continue;
+            while (!Q.empty()) {
+                // Dequeue a node
+                u = Q.front();
+                Q.pop();
 
-            // Else if not last node, then increment level,
-            // and compute profit of children nodes.
-            v1.level = u.level + 1;
-            v2.level = u.level + 1;
+                // If there is nothing on next level
+                if (u.level == n-1) continue;
 
-            v1.weight = u.weight;
-            v1.profit = u.profit;
-            v1.bound = bound(v1, n, W, arr);
+                // Else if not last node, then increment level,
+                // and compute profit of children nodes.
+                v1.level = u.level + 1;
+                v2.level = u.level + 1;
 
-            // Taking current level's item add current
-            // level's weight and value to node u's
-            // weight and value
-            v2.weight = u.weight + arr[v2.level].weight;
-            v2.profit = u.profit + arr[v2.level].value;
-            v2.bound = bound(v2, n, W, arr);
+                v1.weight = u.weight;
+                v1.profit = u.profit;
+                v1.bound = bound(v1, n, W, arr);
 
-            // If cumulated weight is less than W and
-            // profit is greater than previous profit,
-            // update maxprofit
-            if (v2.weight <= W && v2.profit > maxProfit) {
-                #pragma omp critical
-                {
-                    maxProfit = v2.profit;
+                // Taking current level's item add current
+                // level's weight and value to node u's
+                // weight and value
+                v2.weight = u.weight + arr[v2.level].weight;
+                v2.profit = u.profit + arr[v2.level].value;
+                v2.bound = bound(v2, n, W, arr);
+
+                // If cumulated weight is less than W and
+                // profit is greater than previous profit,
+                // update maxprofit
+                if (v2.weight <= W && v2.profit > maxProfit) {
+                    #pragma omp critical
+                    {
+                        maxProfit = v2.profit;
+                    }
                 }
-            }
 
-            // If bound value is greater than profit,
-            // then only push into queue for further
-            // consideration
-            #pragma omp critical
-            {
+                // If bound value is greater than profit,
+                // then only push into queue for further
+                // consideration
                 if (v1.bound > maxProfit) Q.push(v1);
                 if (v2.bound > maxProfit) Q.push(v2);
             }
@@ -255,7 +258,8 @@ void master(char *filename) {
                     END, MPI_COMM_WORLD);
         }
     }
-    maxProfit =  knapsack(Width, items, Nitems, maxProfit, Q);
+    maxProfit =  knapsack(Width, items, Nitems, maxProfit, Q.front());
+    Q.pop();
     MPI_Status status;
     for (int i = 1; i < nWorkers + 1; i += 1) {
         MPI_Recv(&u, 1, mpiNodeStructType, MPI_ANY_SOURCE, MPI_ANY_TAG,
@@ -291,7 +295,8 @@ void worker() {
     if (status.MPI_TAG == NODE) {
         Q.push(u);
     }
-    v.profit = knapsack(W, arr, n, maxProfit, Q);
+    v.profit = knapsack(W, arr, n, maxProfit, Q.front());
+    Q.pop();
     MPI_Send(&v, 1, mpiNodeStructType, 0, NEW_MAX_PROFIT, MPI_COMM_WORLD);
 }
 
